@@ -6,7 +6,13 @@ import { SEED_DATA } from "./seed";
 const BLOB_PATHNAME = "trinidad-diaries/db.json";
 const HERO_SEED_URL = "/seed/Flower.png";
 
-const hasBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN;
+// A Blob store is available either via a classic read-write token, or via a
+// modern OIDC connection (which exposes BLOB_STORE_ID instead of a token — the
+// @vercel/blob SDK then authenticates with the auto-injected VERCEL_OIDC_TOKEN).
+// Checking only for the token made OIDC-connected deployments fall back to the
+// read-only disk path and fail every write with ENOENT.
+const hasBlob = () =>
+  !!process.env.BLOB_READ_WRITE_TOKEN || !!process.env.BLOB_STORE_ID;
 
 // Local dev (no Blob token configured yet): a JSON file on disk plays the
 // same role the Blob store plays in production, so `npm run dev` works
