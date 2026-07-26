@@ -65,7 +65,13 @@ export async function getData(): Promise<Data> {
   const existing = await readRaw();
   if (existing) return existing;
   const seeded: Data = { ...SEED_DATA, heroImageUrl: HERO_SEED_URL };
-  await writeRaw(seeded);
+  try {
+    await writeRaw(seeded);
+  } catch {
+    // No persistent storage available yet (e.g. Blob isn't connected on
+    // Vercel, whose functions have a read-only filesystem) — still render
+    // the seed data rather than crashing the page.
+  }
   return seeded;
 }
 
