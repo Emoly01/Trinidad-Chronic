@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import { mutateData, uploadImage } from "@/lib/store";
+import { str } from "@/lib/hue";
+import type { PcNpcLink } from "@/lib/types";
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: pcId } = await params;
+  const form = await request.formData();
+  const name = str(form.get("name"));
+  const rel = str(form.get("rel"));
+  if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
+
+  const linkId = `${pcId}-npc-${Date.now().toString(36)}`;
+  const avatar = form.get("avatar");
+  let avatarUrl: string | null = null;
+  if (avatar instanceof File && avatar.size > 0) {
+    avatarUrl = await uploadImage(avatar, linkId);
+  }
+
+  const data = await mutateData((d) => {
+    const pc = d.pcs.find((p) => p.id === pcId);
+    if (!pc) return;
+    const link: PcNpcLink = { id: linkId, name, rel, avatarUrl };
+    pc.npcs.push(link);
+  });
+  return NextResponse.json(data);
+}
