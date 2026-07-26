@@ -701,10 +701,8 @@ select {
   background: rgba(0, 0, 0, 0.25);
   border-bottom: 3px solid var(--hue);
 }
-.portrait-banner.tall {
-  height: 230px;
-}
-/* NSC portraits show the full image, so give them more vertical room. */
+/* Portraits are shown whole rather than cropped, so give them room to breathe. */
+.portrait-banner.tall,
 .portrait-banner.npc {
   height: 320px;
 }
@@ -911,15 +909,12 @@ select {
   background: rgba(127, 127, 127, 0.08);
   cursor: pointer;
 }
+/* Every slot shows the whole image (letterboxed) rather than cropping it. */
 .image-slot img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-}
-/* Show the whole image (letterboxed) instead of cropping to fill. */
-.image-slot.contain img {
   object-fit: contain;
 }
 .image-slot .slot-empty {
@@ -1003,6 +998,12 @@ select {
 }
 .image-slot .slot-link-btn:hover {
   color: var(--ink);
+}
+/* The 40px NSC-link avatar has no room for the caption or the link button —
+   it still accepts a click (file picker), a drop, or a pasted link. */
+.npc-link-avatar .slot-empty .cap,
+.npc-link-avatar .slot-link-btn {
+  display: none;
 }
 .image-slot .slot-error {
   position: absolute;
