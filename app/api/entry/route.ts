@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mutateData } from "@/lib/store";
 import { asHue, str } from "@/lib/hue";
+import { sanitizeRichText } from "@/lib/sanitize";
 import type { Data } from "@/lib/types";
 
 // One endpoint for editing and deleting any top-level entry, keyed by the
@@ -52,7 +53,7 @@ function applyPatch(d: Data, type: Coll, id: string, form: FormData): void {
       s.date = str(form.get("date"), s.date);
       s.place = str(form.get("place"), s.place);
       s.title = str(form.get("title"), s.title);
-      s.recap = raw(form, "recap");
+      s.recap = sanitizeRichText(raw(form, "recap"));
       s.hue = asHue(form.get("hue"));
       s.tags = raw(form, "tags")
         .split(",")
@@ -74,7 +75,7 @@ function applyPatch(d: Data, type: Coll, id: string, form: FormData): void {
       if (!sn) return;
       sn.cat = str(form.get("cat"), sn.cat);
       sn.title = str(form.get("title"), sn.title);
-      sn.body = raw(form, "body");
+      sn.body = sanitizeRichText(raw(form, "body"));
       sn.hue = asHue(form.get("hue"));
       return;
     }
@@ -83,7 +84,7 @@ function applyPatch(d: Data, type: Coll, id: string, form: FormData): void {
       if (!n) return;
       n.name = str(form.get("name"), n.name);
       n.faction = raw(form, "faction");
-      n.desc = raw(form, "desc");
+      n.desc = sanitizeRichText(raw(form, "desc"));
       n.status = str(form.get("status"), n.status);
       n.hue = asHue(form.get("hue"));
       return;
@@ -93,7 +94,7 @@ function applyPatch(d: Data, type: Coll, id: string, form: FormData): void {
       if (!pc) return;
       pc.name = str(form.get("name"), pc.name);
       pc.playbook = raw(form, "playbook");
-      pc.backstory = raw(form, "backstory");
+      pc.backstory = sanitizeRichText(raw(form, "backstory"));
       pc.hue = asHue(form.get("hue"));
       return;
     }

@@ -8,6 +8,7 @@ import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
 import EntryActions from "./EntryActions";
+import RichTextEditor from "./RichTextEditor";
 
 const STATUSES = ["Verbündet", "Neutral", "Feind", "Unbekannt"];
 
@@ -49,7 +50,7 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
               </div>
             </div>
             <div className="card-body">
-              <p className="card-desc">{n.desc}</p>
+              <div className="card-desc rich" dangerouslySetInnerHTML={{ __html: n.desc }} />
               <span className="status-chip" style={hueStyle(n.hue)}>
                 {n.status}
               </span>
@@ -110,7 +111,7 @@ function NpcModal({
         </div>
         <div className="field">
           <label>Beschreibung</label>
-          <textarea name="desc" className="large" placeholder="Wer ist diese Person?" defaultValue={entry?.desc} />
+          <RichTextEditor name="desc" initialHTML={entry?.desc ?? ""} placeholder="Wer ist diese Person?" />
         </div>
         <div className="field-row">
           <div className="field">

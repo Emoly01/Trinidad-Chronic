@@ -8,6 +8,7 @@ import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
 import EntryActions from "./EntryActions";
+import RichTextEditor from "./RichTextEditor";
 
 export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data) => void }) {
   const [open, setOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
             <div className="card-body pc">
               <div>
                 <div className="card-block-label">Hintergrund</div>
-                <p className="card-backstory">{c.backstory}</p>
+                <div className="card-backstory rich" dangerouslySetInnerHTML={{ __html: c.backstory }} />
               </div>
               <div className="npc-block">
                 <div className="card-block-label">Wichtige NSCs</div>
@@ -177,11 +178,10 @@ function PcModal({
         </div>
         <div className="field">
           <label>Hintergrund</label>
-          <textarea
-            className="tall"
-            value={backstory}
-            onChange={(e) => setBackstory(e.target.value)}
-            placeholder="Backstory — erzähl in Ruhe. Absätze bleiben erhalten."
+          <RichTextEditor
+            initialHTML={entry?.backstory ?? ""}
+            onChange={setBackstory}
+            placeholder="Backstory — erzähl in Ruhe."
           />
         </div>
         <div className="field">

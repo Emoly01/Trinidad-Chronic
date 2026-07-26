@@ -7,6 +7,7 @@ import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import EntryActions from "./EntryActions";
+import RichTextEditor from "./RichTextEditor";
 
 export default function DiaryTab({
   data,
@@ -70,7 +71,7 @@ export default function DiaryTab({
                     <span className="session-place">{s.place}</span>
                   </div>
                   <h3 className="session-title">{s.title}</h3>
-                  <p className="session-recap">{s.recap}</p>
+                  <div className="session-recap rich" dangerouslySetInnerHTML={{ __html: s.recap }} />
                   <div className="tag-row">
                     {s.tags.map((t, i) => (
                       <span className="tag-chip" key={i}>
@@ -168,7 +169,7 @@ function SessionModal({
         </div>
         <div className="field">
           <label>Rückblick</label>
-          <textarea name="recap" className="tall" placeholder="Was geschah? Erzähl die ganze Sitzung — Absätze bleiben erhalten." defaultValue={entry?.recap} />
+          <RichTextEditor name="recap" initialHTML={entry?.recap ?? ""} placeholder="Was geschah? Erzähl die ganze Sitzung…" />
         </div>
         <div className="field">
           <label>Tags (kommagetrennt)</label>
