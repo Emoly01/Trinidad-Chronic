@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Data, MoodItem } from "@/lib/types";
-import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, linkTargetForm, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
@@ -38,11 +38,19 @@ export default function MoodboardTab({ data, onData }: { data: Data; onData: (d:
                 const form = uploadTargetForm(file, { type: "mood", id: m.id });
                 onData(await postForm("/api/image", form));
               }}
+              onUrl={async (url) => {
+                const form = linkTargetForm(url, { type: "mood", id: m.id });
+                onData(await postForm("/api/image", form));
+              }}
             />
             <div className="mood-caption">{m.caption}</div>
           </div>
         ))}
-        {data.moods.length === 0 && <p className="empty-note">Noch keine Bilder gesammelt.</p>}
+        {data.moods.length === 0 && (
+          <p className="empty-note">
+            Noch keine Bilder gesammelt. Fang die Farben der Insel ein — zieh ein Foto herein oder füg einfach einen Link ein.
+          </p>
+        )}
       </div>
 
       {open && <AddMoodModal onClose={() => setOpen(false)} onData={onData} />}
@@ -78,8 +86,12 @@ function AddMoodModal({ onClose, onData }: { onClose: () => void; onData: (d: Da
           <input type="text" name="caption" placeholder="z. B. J’ouvert · Morgengrauen" required />
         </div>
         <div className="field">
-          <label>Bild</label>
-          <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" required />
+          <label>Bild hochladen</label>
+          <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
+        </div>
+        <div className="field">
+          <label>… oder Bild-Link einfügen</label>
+          <input type="url" name="imageUrl" placeholder="https://…" />
         </div>
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">

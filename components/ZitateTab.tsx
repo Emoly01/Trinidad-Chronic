@@ -43,7 +43,11 @@ export default function ZitateTab({ data, onData }: { data: Data; onData: (d: Da
             </figcaption>
           </figure>
         ))}
-        {data.zitate.length === 0 && <p className="empty-note">Noch keine Zitate gesammelt.</p>}
+        {data.zitate.length === 0 && (
+          <p className="empty-note">
+            Noch kein Wort gefallen, das es wert wäre. Beim nächsten Lime am Tisch kommt bestimmt eins — fang es ein, bevor es verklingt.
+          </p>
+        )}
       </div>
 
       {open && <QuoteModal onClose={() => setOpen(false)} onData={onData} />}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Data, Session } from "@/lib/types";
 import { HUE_LABELS, hueStyle } from "@/lib/ui";
-import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, linkTargetForm, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import EntryActions from "./EntryActions";
@@ -34,6 +34,10 @@ export default function DiaryTab({
               placeholder="Foto der Chaconia einfügen"
               onUpload={async (file) => {
                 const form = uploadTargetForm(file, { type: "hero" });
+                onData(await postForm("/api/image", form));
+              }}
+              onUrl={async (url) => {
+                const form = linkTargetForm(url, { type: "hero" });
                 onData(await postForm("/api/image", form));
               }}
             />
@@ -82,7 +86,11 @@ export default function DiaryTab({
                 </div>
               </article>
             ))}
-            {data.sessions.length === 0 && <p className="empty-note">Noch keine Sitzungen festgehalten.</p>}
+            {data.sessions.length === 0 && (
+              <p className="empty-note">
+                Die Chronik ist noch leer wie der Hafen vor Sonnenaufgang, oui. Halt die erste Sitzung fest, ehe der Nebel von J&apos;ouvert sie verschluckt.
+              </p>
+            )}
           </div>
         </main>
 

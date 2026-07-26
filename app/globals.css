@@ -953,12 +953,19 @@ select {
 .image-slot.over {
   background: rgba(255, 180, 0, 0.1);
 }
-.image-slot .slot-replace {
+.image-slot .slot-actions {
   position: absolute;
   top: 8px;
   right: 8px;
+  display: flex;
+  gap: 6px;
   opacity: 0;
   transition: opacity 0.12s;
+}
+.image-slot:hover .slot-actions {
+  opacity: 1;
+}
+.image-slot .slot-replace {
   font-family: var(--label);
   font-size: 10px;
   font-weight: 700;
@@ -971,8 +978,33 @@ select {
   cursor: pointer;
   backdrop-filter: blur(6px);
 }
-.image-slot:hover .slot-replace {
-  opacity: 1;
+.image-slot .slot-link-btn {
+  font-family: var(--label);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  margin-top: 2px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.image-slot .slot-link-btn:hover {
+  color: var(--ink);
+}
+.image-slot .slot-error {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  font-size: 11px;
+  color: #ffb4ab;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 6px;
+  border-radius: 5px;
 }
 .image-slot .slot-spinner {
   position: absolute;
