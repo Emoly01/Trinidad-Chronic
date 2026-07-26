@@ -108,6 +108,7 @@ export default function RichTextEditor({ name, initialHTML = "", placeholder, on
         aria-multiline="true"
         data-placeholder={placeholder}
         onInput={sync}
+        onBlur={sync}
       />
       {name && <input type="hidden" name={name} value={html} />}
     </div>
