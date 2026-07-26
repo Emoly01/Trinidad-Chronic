@@ -95,11 +95,13 @@ export default function DiaryTab({
             </div>
           </div>
 
-          <div className="rail-quote-card">
-            <div className="rail-quote-heading">Zitat der Woche</div>
-            <p className="rail-quote-text">„{data.quoteOfWeek.text}“</p>
-            <div className="rail-quote-who">— {data.quoteOfWeek.who}</div>
-          </div>
+          {data.quoteOfWeek.text && (
+            <div className="rail-quote-card">
+              <div className="rail-quote-heading">Zitat der Woche</div>
+              <p className="rail-quote-text">„{data.quoteOfWeek.text}“</p>
+              <div className="rail-quote-who">— {data.quoteOfWeek.who}</div>
+            </div>
+          )}
         </aside>
       </div>
 
