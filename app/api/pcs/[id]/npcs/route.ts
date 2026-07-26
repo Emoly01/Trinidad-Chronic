@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { mutateData, uploadImage } from "@/lib/store";
 import { str } from "@/lib/hue";
 import { cleanImageUrl } from "@/lib/image";
+import { findOrCreateNpc } from "@/lib/npcs";
 import type { PcNpcLink } from "@/lib/types";
 
 export async function POST(
@@ -27,7 +28,15 @@ export async function POST(
   const data = await mutateData((d) => {
     const pc = d.pcs.find((p) => p.id === pcId);
     if (!pc) return;
-    const link: PcNpcLink = { id: linkId, name, rel, avatarUrl };
+    // Also give the NSC its own entry in the NSC tab (or reuse the existing one).
+    const npc = findOrCreateNpc(d, name, { hue: pc.hue, avatarUrl });
+    const link: PcNpcLink = {
+      id: linkId,
+      name,
+      rel,
+      avatarUrl: avatarUrl ?? npc?.portraitUrl ?? null,
+      npcId: npc?.id,
+    };
     pc.npcs.push(link);
   });
   return NextResponse.json(data);

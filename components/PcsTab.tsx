@@ -117,7 +117,14 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
 
       {open && <PcModal onClose={() => setOpen(false)} onData={onData} />}
       {editing && <PcModal entry={editing} onClose={() => setEditing(null)} onData={onData} />}
-      {linkFor && <AddPcNpcModal pcId={linkFor} onClose={() => setLinkFor(null)} onData={onData} />}
+      {linkFor && (
+        <AddPcNpcModal
+          pcId={linkFor}
+          npcNames={data.npcs.map((n) => n.name)}
+          onClose={() => setLinkFor(null)}
+          onData={onData}
+        />
+      )}
     </section>
   );
 }
@@ -279,10 +286,12 @@ function PcModal({
 
 function AddPcNpcModal({
   pcId,
+  npcNames,
   onClose,
   onData,
 }: {
   pcId: string;
+  npcNames: string[];
   onClose: () => void;
   onData: (d: Data) => void;
 }) {
@@ -310,7 +319,12 @@ function AddPcNpcModal({
         <div className="field-row">
           <div className="field">
             <label>NSC-Name</label>
-            <input type="text" name="name" required />
+            <input type="text" name="name" list="npc-name-options" required />
+            <datalist id="npc-name-options">
+              {npcNames.map((n) => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
           </div>
           <div className="field">
             <label>Beziehung</label>
@@ -325,6 +339,9 @@ function AddPcNpcModal({
           <label>… oder Bild-Link einfügen</label>
           <input type="url" name="avatarUrl" placeholder="https://…" />
         </div>
+        <p className="field-hint">
+          Neue NSCs erscheinen automatisch im NSC-Tab. Ein bereits vorhandener Name wird wiederverwendet.
+        </p>
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">
           <button type="button" className="btn-secondary" onClick={onClose}>

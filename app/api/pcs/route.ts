@@ -3,6 +3,7 @@ import { mutateData, newId, uploadImage } from "@/lib/store";
 import { asHue, str } from "@/lib/hue";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { cleanImageUrl } from "@/lib/image";
+import { findOrCreateNpc } from "@/lib/npcs";
 import type { Pc, PcNpcLink } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -41,8 +42,13 @@ export async function POST(request: Request) {
   }
 
   const data = await mutateData((d) => {
-    const pc: Pc = { id, name, playbook, hue, backstory, portraitUrl, npcs };
+    const pc: Pc = { id, name, playbook, hue, backstory, portraitUrl, npcs: [] };
     d.pcs.unshift(pc);
+    // Each linked NSC also gets (or reuses) its own entry in the NSC tab.
+    pc.npcs = npcs.map((l) => {
+      const npc = findOrCreateNpc(d, l.name, { hue });
+      return { ...l, avatarUrl: l.avatarUrl ?? npc?.portraitUrl ?? null, npcId: npc?.id };
+    });
   });
   return NextResponse.json(data);
 }
