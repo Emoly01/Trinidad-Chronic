@@ -177,6 +177,14 @@ select {
   font-weight: 600;
   letter-spacing: 0.18em;
   color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.user-tag:hover {
+  color: var(--ink);
 }
 
 .site-nav {
