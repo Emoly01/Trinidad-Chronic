@@ -28,3 +28,20 @@ export async function POST(
   });
   return NextResponse.json(data);
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: pcId } = await params;
+  const linkId = new URL(request.url).searchParams.get("linkId") || "";
+  if (!linkId) return NextResponse.json({ error: "linkId required" }, { status: 400 });
+
+  const data = await mutateData((d) => {
+    const pc = d.pcs.find((p) => p.id === pcId);
+    if (!pc) return;
+    const idx = pc.npcs.findIndex((l) => l.id === linkId);
+    if (idx >= 0) pc.npcs.splice(idx, 1);
+  });
+  return NextResponse.json(data);
+}

@@ -1180,3 +1180,107 @@ select {
     font-size: 40px;
   }
 }
+
+/* ── Long text keeps its paragraphs ─────────────────────────────────── */
+.session-recap,
+.card-backstory,
+.snippet-body,
+.card-desc,
+.quote-text {
+  white-space: pre-wrap;
+}
+
+/* ── Roomier writing areas ──────────────────────────────────────────── */
+.modal.wide {
+  max-width: 720px;
+}
+.field textarea.large {
+  min-height: 150px;
+}
+.field textarea.tall {
+  min-height: 300px;
+  line-height: 1.7;
+}
+.field-hint {
+  font-family: var(--label);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: -6px 0 16px;
+}
+
+/* ── Per-entry edit / delete controls ───────────────────────────────── */
+.session-card,
+.quote-card,
+.snippet-card,
+.portrait-card,
+.mood-tile {
+  position: relative;
+}
+.entry-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  display: flex;
+  gap: 6px;
+}
+@media (hover: hover) {
+  .entry-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .session-card:hover .entry-actions,
+  .quote-card:hover .entry-actions,
+  .snippet-card:hover .entry-actions,
+  .portrait-card:hover .entry-actions,
+  .mood-tile:hover .entry-actions,
+  .entry-actions:focus-within {
+    opacity: 1;
+  }
+}
+.entry-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(6, 10, 8, 0.72);
+  backdrop-filter: blur(4px);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.entry-action:hover {
+  color: var(--ink);
+  border-color: rgba(244, 234, 214, 0.35);
+}
+.entry-action.danger:hover {
+  color: var(--red);
+  border-color: rgba(229, 52, 42, 0.55);
+}
+
+/* ── Remove a single NSC link from a character card ─────────────────── */
+.npc-link-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.npc-link-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  opacity: 0.55;
+  transition: color 0.15s, opacity 0.15s;
+}
+.npc-link-remove:hover {
+  color: var(--red);
+  opacity: 1;
+}
