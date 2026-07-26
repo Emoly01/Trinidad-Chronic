@@ -11,7 +11,7 @@ import type { Data, Hue, Npc } from "./types";
 export function findOrCreateNpc(
   d: Data,
   name: string,
-  opts: { hue?: Hue; avatarUrl?: string | null } = {}
+  opts: { hue?: Hue; avatarUrl?: string | null; id?: string } = {}
 ): Npc | null {
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -25,7 +25,7 @@ export function findOrCreateNpc(
   }
 
   const npc: Npc = {
-    id: newId("npc"),
+    id: opts.id ?? newId("npc"),
     name: trimmed,
     faction: "",
     hue: opts.hue ?? "teal",
@@ -37,11 +37,22 @@ export function findOrCreateNpc(
   return npc;
 }
 
+/** Stable id for a backfilled NSC, so every run produces the same one. */
+function autoNpcId(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `npc-auto-${slug || "unbenannt"}`;
+}
+
 /**
  * Gives NSC entries to character links that predate the auto-linking above
- * (or whose NSC was deleted since). Runs on read and is idempotent: once every
- * link resolves to an existing NSC, it does nothing and reports no change.
- * Returns whether anything was changed and therefore needs persisting.
+ * (or whose NSC was deleted since). Runs on every read and is idempotent:
+ * once every link resolves to an existing NSC it changes nothing. Ids are
+ * derived from the name, so the read path and the write path agree on them.
+ * Returns whether anything changed.
  */
 export function backfillNpcLinks(d: Data): boolean {
   let changed = false;
@@ -50,7 +61,11 @@ export function backfillNpcLinks(d: Data): boolean {
       if (link.npcId && d.npcs.some((n) => n.id === link.npcId)) continue;
 
       const before = d.npcs.length;
-      const npc = findOrCreateNpc(d, link.name, { hue: pc.hue, avatarUrl: link.avatarUrl });
+      const npc = findOrCreateNpc(d, link.name, {
+        hue: pc.hue,
+        avatarUrl: link.avatarUrl,
+        id: autoNpcId(link.name),
+      });
       if (!npc) continue;
 
       if (d.npcs.length !== before) changed = true;
