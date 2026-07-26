@@ -40,3 +40,14 @@ export function uploadTargetForm(
   fd.set("target", JSON.stringify(target));
   return fd;
 }
+
+/** Same as uploadTargetForm, but points a slot at a pasted image link. */
+export function linkTargetForm(
+  url: string,
+  target: Record<string, unknown>
+): FormData {
+  const fd = new FormData();
+  fd.set("imageUrl", url);
+  fd.set("target", JSON.stringify(target));
+  return fd;
+}

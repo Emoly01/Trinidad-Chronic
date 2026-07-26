@@ -37,7 +37,11 @@ export default function SnippetsTab({ data, onData }: { data: Data; onData: (d: 
             <div className="snippet-body rich" dangerouslySetInnerHTML={{ __html: sn.body }} />
           </article>
         ))}
-        {data.snippets.length === 0 && <p className="empty-note">Noch keine Snippets notiert.</p>}
+        {data.snippets.length === 0 && (
+          <p className="empty-note">
+            Noch nichts an der Wand. Pin den ersten Schnipsel fest — eine Hausregel, ein Ort, ein loser Gedanke fürs nächste Lime.
+          </p>
+        )}
       </div>
 
       {open && <SnippetModal onClose={() => setOpen(false)} onData={onData} />}

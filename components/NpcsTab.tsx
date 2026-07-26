@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Data, Npc } from "@/lib/types";
 import { HUE_LABELS, hueStyle } from "@/lib/ui";
-import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, linkTargetForm, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
@@ -43,6 +43,10 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
                   const form = uploadTargetForm(file, { type: "npc", id: n.id });
                   onData(await postForm("/api/image", form));
                 }}
+                onUrl={async (url) => {
+                  const form = linkTargetForm(url, { type: "npc", id: n.id });
+                  onData(await postForm("/api/image", form));
+                }}
               />
               <div className="portrait-overlay">
                 <div className="portrait-eyebrow">{n.faction}</div>
@@ -57,7 +61,11 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
             </div>
           </article>
         ))}
-        {data.npcs.length === 0 && <p className="empty-note">Noch keine NSCs eingetragen.</p>}
+        {data.npcs.length === 0 && (
+          <p className="empty-note">
+            Noch niemand aus dem Nebel getreten. Die Insel ist voller Gesichter — Verbündete, Jumbies und Gefahren. Trag das erste ein.
+          </p>
+        )}
       </div>
 
       {open && <NpcModal onClose={() => setOpen(false)} onData={onData} />}

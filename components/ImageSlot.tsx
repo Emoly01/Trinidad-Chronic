@@ -4,15 +4,29 @@ import { useRef, useState } from "react";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/avif,image/gif";
 
+function firstUrl(text: string): string | null {
+  const trimmed = text.trim();
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol === "http:" || u.protocol === "https:") return u.toString();
+  } catch {
+    // not a URL
+  }
+  return null;
+}
+
 export default function ImageSlot({
   src,
   placeholder,
   onUpload,
+  onUrl,
   className,
 }: {
   src: string | null;
   placeholder: string;
   onUpload: (file: File) => Promise<void>;
+  /** Point the slot at a pasted/entered image link. */
+  onUrl?: (url: string) => Promise<void>;
   className?: string;
 }) {
   const [dragOver, setDragOver] = useState(false);
@@ -20,11 +34,15 @@ export default function ImageSlot({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  function flash(msg: string) {
+    setError(msg);
+    setTimeout(() => setError(null), 3000);
+  }
+
   async function ingest(file: File | undefined | null) {
     if (!file) return;
     if (!ACCEPT.split(",").includes(file.type)) {
-      setError("Bitte PNG, JPEG, WebP, AVIF oder GIF verwenden.");
-      setTimeout(() => setError(null), 3000);
+      flash("Bitte PNG, JPEG, WebP, AVIF oder GIF verwenden.");
       return;
     }
     setUploading(true);
@@ -35,10 +53,44 @@ export default function ImageSlot({
     }
   }
 
+  async function ingestUrl(raw: string) {
+    if (!onUrl) return;
+    const url = firstUrl(raw);
+    if (!url) {
+      flash("Das sieht nicht nach einem Bild-Link aus.");
+      return;
+    }
+    setUploading(true);
+    try {
+      await onUrl(url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function promptForLink(e: React.MouseEvent) {
+    e.stopPropagation();
+    const entered = window.prompt("Bild-Link einfügen (https://…):");
+    if (entered) ingestUrl(entered);
+  }
+
   return (
     <div
       className={`image-slot${dragOver ? " over" : ""}${uploading ? " loading" : ""}${className ? " " + className : ""}`}
       onClick={() => inputRef.current?.click()}
+      onPaste={(e) => {
+        const file = e.clipboardData.files?.[0];
+        if (file) {
+          e.preventDefault();
+          ingest(file);
+          return;
+        }
+        const text = e.clipboardData.getData("text");
+        if (text && onUrl && firstUrl(text)) {
+          e.preventDefault();
+          ingestUrl(text);
+        }
+      }}
       onDragEnter={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -50,7 +102,13 @@ export default function ImageSlot({
       onDrop={(e) => {
         e.preventDefault();
         setDragOver(false);
-        ingest(e.dataTransfer.files?.[0]);
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+          ingest(file);
+          return;
+        }
+        const text = e.dataTransfer.getData("text");
+        if (text) ingestUrl(text);
       }}
     >
       {src && <img src={src} alt="" />}
@@ -62,27 +120,35 @@ export default function ImageSlot({
             <path d="m21 15-5-5L5 21" />
           </svg>
           <div className="cap">{placeholder}</div>
+          {onUrl && (
+            <button type="button" className="slot-link-btn" onClick={promptForLink}>
+              oder Link einfügen
+            </button>
+          )}
         </div>
       )}
       <div className="slot-ring" />
       {src && (
-        <button
-          type="button"
-          className="slot-replace"
-          onClick={(e) => {
-            e.stopPropagation();
-            inputRef.current?.click();
-          }}
-        >
-          Ersetzen
-        </button>
-      )}
-      <div className="slot-spinner" />
-      {error && (
-        <div style={{ position: "absolute", left: 6, right: 6, bottom: 6, fontSize: 11, color: "#ffb4ab", background: "rgba(0,0,0,.6)", padding: "4px 6px", borderRadius: 5 }}>
-          {error}
+        <div className="slot-actions">
+          <button
+            type="button"
+            className="slot-replace"
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.click();
+            }}
+          >
+            Ersetzen
+          </button>
+          {onUrl && (
+            <button type="button" className="slot-replace" onClick={promptForLink}>
+              Link
+            </button>
+          )}
         </div>
       )}
+      <div className="slot-spinner" />
+      {error && <div className="slot-error">{error}</div>}
       <input
         ref={inputRef}
         type="file"

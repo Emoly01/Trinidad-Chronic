@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Data, Pc } from "@/lib/types";
 import { HUE_LABELS, hueGlowStyle, hueStyle } from "@/lib/ui";
-import { deleteEntry, deletePcNpc, patchForm, postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, deletePcNpc, linkTargetForm, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
@@ -47,6 +47,10 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
                   const form = uploadTargetForm(file, { type: "pc", id: c.id });
                   onData(await postForm("/api/image", form));
                 }}
+                onUrl={async (url) => {
+                  const form = linkTargetForm(url, { type: "pc", id: c.id });
+                  onData(await postForm("/api/image", form));
+                }}
               />
               <div className="portrait-overlay tall">
                 <div className="portrait-eyebrow tall">{c.playbook}</div>
@@ -70,6 +74,14 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
                             placeholder="Foto"
                             onUpload={async (file) => {
                               const form = uploadTargetForm(file, {
+                                type: "pcNpc",
+                                pcId: c.id,
+                                linkId: rel.id,
+                              });
+                              onData(await postForm("/api/image", form));
+                            }}
+                            onUrl={async (url) => {
+                              const form = linkTargetForm(url, {
                                 type: "pcNpc",
                                 pcId: c.id,
                                 linkId: rel.id,
@@ -102,7 +114,11 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
             </div>
           </article>
         ))}
-        {data.pcs.length === 0 && <p className="empty-note">Noch keine Charaktere angelegt.</p>}
+        {data.pcs.length === 0 && (
+          <p className="empty-note">
+            Noch keine Runde an Bord. Wer wagt sich als Erste:r hinaus auf Iere? Leg den ersten Charakter an und stich in See.
+          </p>
+        )}
       </div>
 
       {open && <PcModal onClose={() => setOpen(false)} onData={onData} />}
