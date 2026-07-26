@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import type { Data } from "@/lib/types";
+import type { Data, Pc } from "@/lib/types";
 import { HUE_LABELS, hueGlowStyle, hueStyle } from "@/lib/ui";
-import { postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, deletePcNpc, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
+import EntryActions from "./EntryActions";
 
 export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data) => void }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Pc | null>(null);
   const [linkFor, setLinkFor] = useState<string | null>(null);
+
+  async function remove(c: Pc) {
+    if (!confirm(`Charakter „${c.name}" wirklich löschen?`)) return;
+    onData(await deleteEntry("pcs", c.id));
+  }
+
+  async function removeLink(pcId: string, linkId: string, name: string) {
+    if (!confirm(`Verknüpfung mit „${name}" entfernen?`)) return;
+    onData(await deletePcNpc(pcId, linkId));
+  }
 
   return (
     <section className="page-section">
@@ -25,6 +37,7 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
       <div className="cards-grid-2">
         {data.pcs.map((c) => (
           <article className="portrait-card" key={c.id}>
+            <EntryActions onEdit={() => setEditing(c)} onDelete={() => remove(c)} />
             <div className="portrait-banner tall" style={hueStyle(c.hue)}>
               <ImageSlot
                 src={c.portraitUrl}
@@ -66,7 +79,18 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
                         </span>
                         <span className="npc-link-name">{rel.name}</span>
                       </span>
-                      <span className="npc-link-rel">{rel.rel}</span>
+                      <span className="npc-link-right">
+                        <span className="npc-link-rel">{rel.rel}</span>
+                        <button
+                          type="button"
+                          className="npc-link-remove"
+                          title="Verknüpfung entfernen"
+                          aria-label="Verknüpfung entfernen"
+                          onClick={() => removeLink(c.id, rel.id, rel.name)}
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -80,19 +104,28 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
         {data.pcs.length === 0 && <p className="empty-note">Noch keine Charaktere angelegt.</p>}
       </div>
 
-      {open && <AddPcModal onClose={() => setOpen(false)} onData={onData} />}
+      {open && <PcModal onClose={() => setOpen(false)} onData={onData} />}
+      {editing && <PcModal entry={editing} onClose={() => setEditing(null)} onData={onData} />}
       {linkFor && <AddPcNpcModal pcId={linkFor} onClose={() => setLinkFor(null)} onData={onData} />}
     </section>
   );
 }
 
-function AddPcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data) => void }) {
+function PcModal({
+  entry,
+  onClose,
+  onData,
+}: {
+  entry?: Pc;
+  onClose: () => void;
+  onData: (d: Data) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [playbook, setPlaybook] = useState("");
-  const [backstory, setBackstory] = useState("");
-  const [hue, setHue] = useState("gold");
+  const [name, setName] = useState(entry?.name ?? "");
+  const [playbook, setPlaybook] = useState(entry?.playbook ?? "");
+  const [backstory, setBackstory] = useState(entry?.backstory ?? "");
+  const [hue, setHue] = useState<string>(entry?.hue ?? "gold");
   const [portrait, setPortrait] = useState<File | null>(null);
   const [links, setLinks] = useState<{ name: string; rel: string }[]>([{ name: "", rel: "" }]);
 
@@ -101,7 +134,7 @@ function AddPcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data
   }
 
   return (
-    <Modal title="Neuer Charakter" onClose={onClose}>
+    <Modal title={entry ? "Charakter bearbeiten" : "Neuer Charakter"} onClose={onClose} wide>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -113,9 +146,16 @@ function AddPcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data
             fd.set("playbook", playbook);
             fd.set("backstory", backstory);
             fd.set("hue", hue);
-            if (portrait) fd.set("portrait", portrait);
-            fd.set("npcs", JSON.stringify(links.filter((l) => l.name.trim())));
-            const data = await postForm("/api/pcs", fd);
+            let data: Data;
+            if (entry) {
+              fd.set("type", "pcs");
+              fd.set("id", entry.id);
+              data = await patchForm("/api/entry", fd);
+            } else {
+              if (portrait) fd.set("portrait", portrait);
+              fd.set("npcs", JSON.stringify(links.filter((l) => l.name.trim())));
+              data = await postForm("/api/pcs", fd);
+            }
             onData(data);
             onClose();
           } catch (err) {
@@ -137,7 +177,12 @@ function AddPcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data
         </div>
         <div className="field">
           <label>Hintergrund</label>
-          <textarea value={backstory} onChange={(e) => setBackstory(e.target.value)} placeholder="Backstory" />
+          <textarea
+            className="tall"
+            value={backstory}
+            onChange={(e) => setBackstory(e.target.value)}
+            placeholder="Backstory — erzähl in Ruhe. Absätze bleiben erhalten."
+          />
         </div>
         <div className="field">
           <label>Akzentfarbe</label>
@@ -149,44 +194,53 @@ function AddPcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data
             ))}
           </select>
         </div>
-        <div className="field">
-          <label>Portrait (optional)</label>
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
-            onChange={(e) => setPortrait(e.target.files?.[0] || null)}
-          />
-        </div>
 
-        <div className="field">
-          <label>Wichtige NSCs (optional)</label>
-        </div>
-        {links.map((l, i) => (
-          <div className="npc-link-fields" key={i}>
-            <div className="field-row">
+        {!entry && (
+          <>
+            <div className="field">
+              <label>Portrait (optional)</label>
               <input
-                type="text"
-                placeholder="NSC-Name"
-                value={l.name}
-                onChange={(e) => updateLink(i, { name: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Beziehung"
-                value={l.rel}
-                onChange={(e) => updateLink(i, { rel: e.target.value })}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+                onChange={(e) => setPortrait(e.target.files?.[0] || null)}
               />
             </div>
-            {links.length > 1 && (
-              <button type="button" className="remove-link-btn" onClick={() => setLinks((ls) => ls.filter((_, idx) => idx !== i))}>
-                Entfernen
-              </button>
-            )}
-          </div>
-        ))}
-        <button type="button" className="add-link-btn" onClick={() => setLinks((ls) => [...ls, { name: "", rel: "" }])}>
-          + Weiterer NSC
-        </button>
+
+            <div className="field">
+              <label>Wichtige NSCs (optional)</label>
+            </div>
+            {links.map((l, i) => (
+              <div className="npc-link-fields" key={i}>
+                <div className="field-row">
+                  <input
+                    type="text"
+                    placeholder="NSC-Name"
+                    value={l.name}
+                    onChange={(e) => updateLink(i, { name: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Beziehung"
+                    value={l.rel}
+                    onChange={(e) => updateLink(i, { rel: e.target.value })}
+                  />
+                </div>
+                {links.length > 1 && (
+                  <button type="button" className="remove-link-btn" onClick={() => setLinks((ls) => ls.filter((_, idx) => idx !== i))}>
+                    Entfernen
+                  </button>
+                )}
+              </div>
+            ))}
+            <button type="button" className="add-link-btn" onClick={() => setLinks((ls) => [...ls, { name: "", rel: "" }])}>
+              + Weiterer NSC
+            </button>
+          </>
+        )}
+
+        {entry && (
+          <p className="field-hint">Portrait und NSC-Verknüpfungen bearbeitest du direkt auf der Karte.</p>
+        )}
 
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">

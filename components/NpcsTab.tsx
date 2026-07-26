@@ -1,17 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { Data } from "@/lib/types";
+import type { Data, Npc } from "@/lib/types";
 import { HUE_LABELS, hueStyle } from "@/lib/ui";
-import { postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
+import EntryActions from "./EntryActions";
 
 const STATUSES = ["Verbündet", "Neutral", "Feind", "Unbekannt"];
 
 export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data) => void }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Npc | null>(null);
+
+  async function remove(n: Npc) {
+    if (!confirm(`NSC „${n.name}" wirklich löschen?`)) return;
+    onData(await deleteEntry("npcs", n.id));
+  }
 
   return (
     <section className="page-section">
@@ -26,6 +33,7 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
       <div className="cards-grid-3">
         {data.npcs.map((n) => (
           <article className="portrait-card" key={n.id}>
+            <EntryActions onEdit={() => setEditing(n)} onDelete={() => remove(n)} />
             <div className="portrait-banner" style={hueStyle(n.hue)}>
               <ImageSlot
                 src={n.portraitUrl}
@@ -51,24 +59,34 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
         {data.npcs.length === 0 && <p className="empty-note">Noch keine NSCs eingetragen.</p>}
       </div>
 
-      {open && <AddNpcModal onClose={() => setOpen(false)} onData={onData} />}
+      {open && <NpcModal onClose={() => setOpen(false)} onData={onData} />}
+      {editing && <NpcModal entry={editing} onClose={() => setEditing(null)} onData={onData} />}
     </section>
   );
 }
 
-function AddNpcModal({ onClose, onData }: { onClose: () => void; onData: (d: Data) => void }) {
+function NpcModal({
+  entry,
+  onClose,
+  onData,
+}: {
+  entry?: Npc;
+  onClose: () => void;
+  onData: (d: Data) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Modal title="Neuer NSC" onClose={onClose}>
+    <Modal title={entry ? "NSC bearbeiten" : "Neuer NSC"} onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           setError(null);
           try {
-            const data = await postForm("/api/npcs", new FormData(e.currentTarget));
+            const fd = new FormData(e.currentTarget);
+            const data = entry ? await patchForm("/api/entry", fd) : await postForm("/api/npcs", fd);
             onData(data);
             onClose();
           } catch (err) {
@@ -78,24 +96,26 @@ function AddNpcModal({ onClose, onData }: { onClose: () => void; onData: (d: Dat
           }
         }}
       >
+        {entry && <input type="hidden" name="type" value="npcs" />}
+        {entry && <input type="hidden" name="id" value={entry.id} />}
         <div className="field-row">
           <div className="field">
             <label>Name</label>
-            <input type="text" name="name" placeholder="Name" required />
+            <input type="text" name="name" placeholder="Name" defaultValue={entry?.name} required />
           </div>
           <div className="field">
             <label>Fraktion</label>
-            <input type="text" name="faction" placeholder="z. B. Hüterin der Flüsse" />
+            <input type="text" name="faction" placeholder="z. B. Hüterin der Flüsse" defaultValue={entry?.faction} />
           </div>
         </div>
         <div className="field">
           <label>Beschreibung</label>
-          <textarea name="desc" placeholder="Wer ist diese Person?" />
+          <textarea name="desc" className="large" placeholder="Wer ist diese Person?" defaultValue={entry?.desc} />
         </div>
         <div className="field-row">
           <div className="field">
             <label>Status</label>
-            <select name="status" defaultValue={STATUSES[0]}>
+            <select name="status" defaultValue={entry?.status ?? STATUSES[0]}>
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -105,7 +125,7 @@ function AddNpcModal({ onClose, onData }: { onClose: () => void; onData: (d: Dat
           </div>
           <div className="field">
             <label>Akzentfarbe</label>
-            <select name="hue" defaultValue="teal">
+            <select name="hue" defaultValue={entry?.hue ?? "teal"}>
               {HUE_LABELS.map((h) => (
                 <option key={h.value} value={h.value}>
                   {h.label}
@@ -114,10 +134,15 @@ function AddNpcModal({ onClose, onData }: { onClose: () => void; onData: (d: Dat
             </select>
           </div>
         </div>
-        <div className="field">
-          <label>Portrait (optional)</label>
-          <input type="file" name="portrait" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
-        </div>
+        {!entry && (
+          <div className="field">
+            <label>Portrait (optional)</label>
+            <input type="file" name="portrait" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
+          </div>
+        )}
+        {entry && (
+          <p className="field-hint">Portrait änderst du direkt über das Bild auf der Karte.</p>
+        )}
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">
           <button type="button" className="btn-secondary" onClick={onClose}>

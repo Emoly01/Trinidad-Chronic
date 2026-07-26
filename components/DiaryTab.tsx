@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { Data } from "@/lib/types";
+import type { Data, Session } from "@/lib/types";
 import { HUE_LABELS, hueStyle } from "@/lib/ui";
-import { postForm, uploadTargetForm } from "@/lib/client";
+import { deleteEntry, patchForm, postForm, uploadTargetForm } from "@/lib/client";
 import ImageSlot from "./ImageSlot";
 import Modal from "./Modal";
+import EntryActions from "./EntryActions";
 
 export default function DiaryTab({
   data,
@@ -15,6 +16,12 @@ export default function DiaryTab({
   onData: (d: Data) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Session | null>(null);
+
+  async function remove(s: Session) {
+    if (!confirm(`Sitzung „${s.title}" wirklich löschen?`)) return;
+    onData(await deleteEntry("sessions", s.id));
+  }
 
   return (
     <div>
@@ -51,6 +58,7 @@ export default function DiaryTab({
           <div className="session-list">
             {data.sessions.map((s) => (
               <article className="session-card" key={s.id} style={hueStyle(s.hue)}>
+                <EntryActions onEdit={() => setEditing(s)} onDelete={() => remove(s)} />
                 <div className="session-num-col">
                   <div className="session-label">Sitzung</div>
                   <div className="session-num">{s.n}</div>
@@ -105,15 +113,18 @@ export default function DiaryTab({
         </aside>
       </div>
 
-      {open && <AddSessionModal onClose={() => setOpen(false)} onData={onData} />}
+      {open && <SessionModal onClose={() => setOpen(false)} onData={onData} />}
+      {editing && <SessionModal entry={editing} onClose={() => setEditing(null)} onData={onData} />}
     </div>
   );
 }
 
-function AddSessionModal({
+function SessionModal({
+  entry,
   onClose,
   onData,
 }: {
+  entry?: Session;
   onClose: () => void;
   onData: (d: Data) => void;
 }) {
@@ -121,14 +132,15 @@ function AddSessionModal({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Modal title="Neue Sitzung" onClose={onClose}>
+    <Modal title={entry ? "Sitzung bearbeiten" : "Neue Sitzung"} onClose={onClose} wide>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           setError(null);
           try {
-            const data = await postForm("/api/sessions", new FormData(e.currentTarget));
+            const fd = new FormData(e.currentTarget);
+            const data = entry ? await patchForm("/api/entry", fd) : await postForm("/api/sessions", fd);
             onData(data);
             onClose();
           } catch (err) {
@@ -138,31 +150,33 @@ function AddSessionModal({
           }
         }}
       >
+        {entry && <input type="hidden" name="type" value="sessions" />}
+        {entry && <input type="hidden" name="id" value={entry.id} />}
         <div className="field-row">
           <div className="field">
             <label>Datum</label>
-            <input type="text" name="date" placeholder="z. B. 28. Trockenmond" required />
+            <input type="text" name="date" placeholder="z. B. 28. Trockenmond" defaultValue={entry?.date} required />
           </div>
           <div className="field">
             <label>Ort</label>
-            <input type="text" name="place" placeholder="z. B. La Brea" required />
+            <input type="text" name="place" placeholder="z. B. La Brea" defaultValue={entry?.place} required />
           </div>
         </div>
         <div className="field">
           <label>Titel</label>
-          <input type="text" name="title" placeholder="Titel der Sitzung" required />
+          <input type="text" name="title" placeholder="Titel der Sitzung" defaultValue={entry?.title} required />
         </div>
         <div className="field">
           <label>Rückblick</label>
-          <textarea name="recap" placeholder="Was geschah?" />
+          <textarea name="recap" className="tall" placeholder="Was geschah? Erzähl die ganze Sitzung — Absätze bleiben erhalten." defaultValue={entry?.recap} />
         </div>
         <div className="field">
           <label>Tags (kommagetrennt)</label>
-          <input type="text" name="tags" placeholder="z. B. Dungeon, Neu: NSC" />
+          <input type="text" name="tags" placeholder="z. B. Dungeon, Neu: NSC" defaultValue={entry?.tags.join(", ")} />
         </div>
         <div className="field">
           <label>Akzentfarbe</label>
-          <select name="hue" defaultValue="gold">
+          <select name="hue" defaultValue={entry?.hue ?? "gold"}>
             {HUE_LABELS.map((h) => (
               <option key={h.value} value={h.value}>
                 {h.label}
