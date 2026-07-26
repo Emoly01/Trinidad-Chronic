@@ -19,13 +19,7 @@ export default function MoodboardTab({ data, onData }: { data: Data; onData: (d:
 
   return (
     <section className="page-section">
-      <PageHead
-        eyebrow="Kampagne · Iere"
-        title="Moodboard"
-        sub="Farben, Bilder und Stimmungen der Kampagne."
-        cta="+ BILD"
-        onCta={() => setOpen(true)}
-      />
+      <PageHead title="Moodboard" cta="+ BILD" onCta={() => setOpen(true)} />
 
       <div className="mood-grid">
         {data.moods.map((m) => (

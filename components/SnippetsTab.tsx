@@ -20,13 +20,7 @@ export default function SnippetsTab({ data, onData }: { data: Data; onData: (d: 
 
   return (
     <section className="page-section">
-      <PageHead
-        eyebrow="Kampagne · Iere"
-        title="Snippets"
-        sub="Regeln, Orte und lose Notizen — griffbereit für die nächste Sitzung."
-        cta="+ SCHNIPSEL"
-        onCta={() => setOpen(true)}
-      />
+      <PageHead title="Snippets" cta="+ SCHNIPSEL" onCta={() => setOpen(true)} />
 
       <div className="snippets-grid">
         {data.snippets.map((sn) => (

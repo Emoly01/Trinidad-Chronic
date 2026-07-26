@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { mutateData, newId, uploadImage } from "@/lib/store";
 import { str } from "@/lib/hue";
-import { cleanImageUrl } from "../image/route";
+import { cleanImageUrl } from "@/lib/image";
 import type { MoodItem } from "@/lib/types";
 
 export async function POST(request: Request) {

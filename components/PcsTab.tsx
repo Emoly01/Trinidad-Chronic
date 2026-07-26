@@ -27,13 +27,7 @@ export default function PcsTab({ data, onData }: { data: Data; onData: (d: Data)
 
   return (
     <section className="page-section">
-      <PageHead
-        eyebrow="Kampagne · Iere"
-        title="Spielercharaktere"
-        sub="Die Runde, die sich auf Iere wagt."
-        cta="+ CHARAKTER"
-        onCta={() => setOpen(true)}
-      />
+      <PageHead title="Spielercharaktere" cta="+ CHARAKTER" onCta={() => setOpen(true)} />
 
       <div className="cards-grid-2">
         {data.pcs.map((c) => (
@@ -144,6 +138,7 @@ function PcModal({
   const [backstory, setBackstory] = useState(entry?.backstory ?? "");
   const [hue, setHue] = useState<string>(entry?.hue ?? "gold");
   const [portrait, setPortrait] = useState<File | null>(null);
+  const [portraitLink, setPortraitLink] = useState("");
   const [links, setLinks] = useState<{ name: string; rel: string }[]>([{ name: "", rel: "" }]);
 
   function updateLink(i: number, patch: Partial<{ name: string; rel: string }>) {
@@ -170,6 +165,7 @@ function PcModal({
               data = await patchForm("/api/entry", fd);
             } else {
               if (portrait) fd.set("portrait", portrait);
+              else if (portraitLink.trim()) fd.set("portraitUrl", portraitLink.trim());
               fd.set("npcs", JSON.stringify(links.filter((l) => l.name.trim())));
               data = await postForm("/api/pcs", fd);
             }
@@ -214,11 +210,20 @@ function PcModal({
         {!entry && (
           <>
             <div className="field">
-              <label>Portrait (optional)</label>
+              <label>Portrait hochladen (optional)</label>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
                 onChange={(e) => setPortrait(e.target.files?.[0] || null)}
+              />
+            </div>
+            <div className="field">
+              <label>… oder Bild-Link einfügen</label>
+              <input
+                type="url"
+                placeholder="https://…"
+                value={portraitLink}
+                onChange={(e) => setPortraitLink(e.target.value)}
               />
             </div>
 
@@ -313,8 +318,12 @@ function AddPcNpcModal({
           </div>
         </div>
         <div className="field">
-          <label>Foto (optional)</label>
+          <label>Foto hochladen (optional)</label>
           <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
+        </div>
+        <div className="field">
+          <label>… oder Bild-Link einfügen</label>
+          <input type="url" name="avatarUrl" placeholder="https://…" />
         </div>
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">

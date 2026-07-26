@@ -45,10 +45,6 @@ export default function DiaryTab({
           <div className="hero-orb-shine" />
         </div>
         <h1 className="hero-title">Chronik</h1>
-        <p className="hero-sub">
-          Alles, was auf der Insel geschah — Sitzung für Sitzung, festgehalten bevor die Erinnerung im Nebel von{" "}
-          <span style={{ color: "var(--ink)" }}>J&apos;ouvert</span> verschwindet.
-        </p>
       </section>
 
       <div className="content-grid">

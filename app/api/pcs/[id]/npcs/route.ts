@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mutateData, uploadImage } from "@/lib/store";
 import { str } from "@/lib/hue";
+import { cleanImageUrl } from "@/lib/image";
 import type { PcNpcLink } from "@/lib/types";
 
 export async function POST(
@@ -15,9 +16,12 @@ export async function POST(
 
   const linkId = `${pcId}-npc-${Date.now().toString(36)}`;
   const avatar = form.get("avatar");
+  const avatarLink = cleanImageUrl(form.get("avatarUrl"));
   let avatarUrl: string | null = null;
   if (avatar instanceof File && avatar.size > 0) {
     avatarUrl = await uploadImage(avatar, linkId);
+  } else if (avatarLink) {
+    avatarUrl = avatarLink;
   }
 
   const data = await mutateData((d) => {
