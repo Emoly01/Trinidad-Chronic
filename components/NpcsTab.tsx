@@ -23,13 +23,7 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
 
   return (
     <section className="page-section">
-      <PageHead
-        eyebrow="Kampagne · Iere"
-        title="NSCs"
-        sub="Die Gesichter der Insel — Verbündete, Rätsel und Gefahren."
-        cta="+ NSC"
-        onCta={() => setOpen(true)}
-      />
+      <PageHead title="NSCs" cta="+ NSC" onCta={() => setOpen(true)} />
 
       <div className="cards-grid-3">
         {data.npcs.map((n) => (
@@ -144,10 +138,16 @@ function NpcModal({
           </div>
         </div>
         {!entry && (
-          <div className="field">
-            <label>Portrait (optional)</label>
-            <input type="file" name="portrait" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
-          </div>
+          <>
+            <div className="field">
+              <label>Portrait hochladen (optional)</label>
+              <input type="file" name="portrait" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" />
+            </div>
+            <div className="field">
+              <label>… oder Bild-Link einfügen</label>
+              <input type="url" name="portraitUrl" placeholder="https://…" />
+            </div>
+          </>
         )}
         {entry && (
           <p className="field-hint">Portrait änderst du direkt über das Bild auf der Karte.</p>

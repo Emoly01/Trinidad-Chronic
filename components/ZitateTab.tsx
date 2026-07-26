@@ -19,13 +19,7 @@ export default function ZitateTab({ data, onData }: { data: Data; onData: (d: Da
 
   return (
     <section className="page-section">
-      <PageHead
-        eyebrow="Kampagne · Iere"
-        title="Zitate"
-        sub="Was am Tisch gesagt wurde und zu gut war, um es zu vergessen."
-        cta="+ ZITAT"
-        onCta={() => setOpen(true)}
-      />
+      <PageHead title="Zitate" cta="+ ZITAT" onCta={() => setOpen(true)} />
 
       <div className="quotes-grid">
         {data.zitate.map((q) => (

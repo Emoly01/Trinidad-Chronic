@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { mutateData, newId, uploadImage } from "@/lib/store";
 import { asHue, str } from "@/lib/hue";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { cleanImageUrl } from "@/lib/image";
 import type { Npc } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -14,9 +15,12 @@ export async function POST(request: Request) {
   const id = newId("npc");
 
   const portrait = form.get("portrait");
+  const portraitLink = cleanImageUrl(form.get("portraitUrl"));
   let portraitUrl: string | null = null;
   if (portrait instanceof File && portrait.size > 0) {
     portraitUrl = await uploadImage(portrait, id);
+  } else if (portraitLink) {
+    portraitUrl = portraitLink;
   }
 
   const data = await mutateData((d) => {
