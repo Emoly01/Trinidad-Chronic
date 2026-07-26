@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { mutateData, newId, uploadImage } from "@/lib/store";
 import { asHue, str } from "@/lib/hue";
+import { sanitizeRichText } from "@/lib/sanitize";
 import type { Pc, PcNpcLink } from "@/lib/types";
 
 export async function POST(request: Request) {
   const form = await request.formData();
   const name = str(form.get("name"), "Unbenannter Charakter");
   const playbook = str(form.get("playbook"));
-  const backstory = str(form.get("backstory"));
+  const backstory = sanitizeRichText(str(form.get("backstory")));
   const hue = asHue(form.get("hue"));
   const id = newId("pc");
 

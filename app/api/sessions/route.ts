@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mutateData, newId } from "@/lib/store";
 import { asHue, str } from "@/lib/hue";
+import { sanitizeRichText } from "@/lib/sanitize";
 import type { Session } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
   const date = str(form.get("date"), "Unbekanntes Datum");
   const place = str(form.get("place"), "Iere");
   const title = str(form.get("title"), "Neue Sitzung");
-  const recap = str(form.get("recap"));
+  const recap = sanitizeRichText(str(form.get("recap")));
   const tags = str(form.get("tags"))
     .split(",")
     .map((t) => t.trim())

@@ -7,6 +7,7 @@ import { deleteEntry, patchForm, postForm } from "@/lib/client";
 import Modal from "./Modal";
 import PageHead from "./PageHead";
 import EntryActions from "./EntryActions";
+import RichTextEditor from "./RichTextEditor";
 
 export default function SnippetsTab({ data, onData }: { data: Data; onData: (d: Data) => void }) {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,7 @@ export default function SnippetsTab({ data, onData }: { data: Data; onData: (d: 
             <EntryActions onEdit={() => setEditing(sn)} onDelete={() => remove(sn)} />
             <span className="snippet-tag">{sn.cat}</span>
             <h3 className="snippet-title">{sn.title}</h3>
-            <p className="snippet-body">{sn.body}</p>
+            <div className="snippet-body rich" dangerouslySetInnerHTML={{ __html: sn.body }} />
           </article>
         ))}
         {data.snippets.length === 0 && <p className="empty-note">Noch keine Snippets notiert.</p>}
@@ -108,7 +109,7 @@ function SnippetModal({
         </div>
         <div className="field">
           <label>Text</label>
-          <textarea name="body" className="large" placeholder="Details" defaultValue={entry?.body} />
+          <RichTextEditor name="body" initialHTML={entry?.body ?? ""} placeholder="Details" />
         </div>
         {error && <div className="form-error">{error}</div>}
         <div className="modal-actions">
