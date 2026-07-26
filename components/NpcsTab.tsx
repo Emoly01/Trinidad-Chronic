@@ -32,7 +32,6 @@ export default function NpcsTab({ data, onData }: { data: Data; onData: (d: Data
             <div className="portrait-banner npc" style={hueStyle(n.hue)}>
               <ImageSlot
                 src={n.portraitUrl}
-                className="contain"
                 placeholder="Portrait ablegen"
                 onUpload={async (file) => {
                   const form = uploadTargetForm(file, { type: "npc", id: n.id });
