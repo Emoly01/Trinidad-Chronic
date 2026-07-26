@@ -50,6 +50,8 @@ export interface PcNpcLink {
   name: string;
   rel: string;
   avatarUrl: string | null;
+  /** The NSC entry this link points at, so it also shows up in the NSC tab. */
+  npcId?: string;
 }
 
 export interface Pc {

@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { Data } from "./types";
 import { SEED_DATA } from "./seed";
+import { backfillNpcLinks } from "./npcs";
 
 const BLOB_PATHNAME = "trinidad-diaries/db.json";
 const HERO_SEED_URL = "/seed/Flower.png";
@@ -33,22 +34,44 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readRaw(): Promise<Data | null> {
+const emptyData = (): Data => ({ ...SEED_DATA, heroImageUrl: HERO_SEED_URL });
+
+/**
+ * Reads the chronicle. Returns null ONLY when the store is genuinely empty
+ * (nothing has ever been written); anything that merely *might* be a transient
+ * failure throws instead.
+ *
+ * That distinction matters more than it looks: callers treat null as "start a
+ * fresh, empty chronicle", so returning null for a hiccup — a blob that is
+ * briefly missing from `list`, a non-200 from the CDN, malformed JSON — would
+ * hand back an empty document that then gets written over everyone's data.
+ */
+async function readRaw(attempt = 0): Promise<Data | null> {
   if (hasBlob()) {
     const { list } = await import("@vercel/blob");
     const { blobs } = await list({ prefix: BLOB_PATHNAME, limit: 1 });
     const hit = blobs.find((b) => b.pathname === BLOB_PATHNAME);
-    if (!hit) return null;
+    if (!hit) {
+      // `list` is eventually consistent, so a freshly written document can be
+      // missing for a moment. Retry before believing the store is empty.
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+        return readRaw(attempt + 1);
+      }
+      return null;
+    }
     const res = await fetch(hit.url, { cache: "no-store" });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error(`Blob-Lesefehler: HTTP ${res.status}`);
     return (await res.json()) as Data;
   }
+  let txt: string;
   try {
-    const txt = await fs.readFile(LOCAL_DB_PATH, "utf8");
-    return JSON.parse(txt) as Data;
-  } catch {
-    return null;
+    txt = await fs.readFile(LOCAL_DB_PATH, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
   }
+  return JSON.parse(txt) as Data;
 }
 
 async function writeRaw(data: Data): Promise<void> {
@@ -67,26 +90,41 @@ async function writeRaw(data: Data): Promise<void> {
   await fs.writeFile(LOCAL_DB_PATH, json, "utf8");
 }
 
+/**
+ * Reads the chronicle for rendering. Never writes: an empty chronicle is not
+ * worth persisting, and persisting one after a failed read is exactly how a
+ * whole campaign gets wiped. If storage can't be reached we render an empty
+ * page and leave whatever is stored untouched.
+ */
 export async function getData(): Promise<Data> {
-  const existing = await readRaw();
-  if (existing) return existing;
-  const seeded: Data = { ...SEED_DATA, heroImageUrl: HERO_SEED_URL };
+  let existing: Data | null;
   try {
-    await writeRaw(seeded);
-  } catch {
-    // No persistent storage available yet (e.g. Blob isn't connected on
-    // Vercel, whose functions have a read-only filesystem) — still render
-    // the seed data rather than crashing the page.
+    existing = await readRaw();
+  } catch (err) {
+    console.error("Chronik konnte nicht gelesen werden:", err);
+    return emptyData();
   }
-  return seeded;
+  if (!existing) return emptyData();
+  // Character links written before NSC auto-linking have no NSC entry yet.
+  // Repaired in memory here (the ids are deterministic, so this matches what
+  // the write path persists) — the repair is saved with the next change.
+  backfillNpcLinks(existing);
+  return existing;
 }
 
-/** Read-modify-write under the in-process lock. `mutator` mutates `data` in place or returns a replacement. */
+/**
+ * Read-modify-write under the in-process lock. `mutator` mutates `data` in
+ * place or returns a replacement. If the stored chronicle can't be read, the
+ * mutation is aborted rather than written on top of an empty document, so a
+ * storage hiccup surfaces as a failed save instead of silent data loss.
+ */
 export async function mutateData(
   mutator: (data: Data) => Data | void
 ): Promise<Data> {
   return withLock(async () => {
-    const data = await getData();
+    const existing = await readRaw();
+    const data = existing ?? emptyData();
+    backfillNpcLinks(data);
     const result = mutator(data) || data;
     await writeRaw(result);
     return result;
@@ -119,6 +157,4 @@ export async function uploadImage(file: File, key: string): Promise<string> {
   return `/uploads/${filename}`;
 }
 
-export function newId(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+export { newId } from "./id";
