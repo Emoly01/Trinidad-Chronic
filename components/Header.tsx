@@ -1,6 +1,32 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 export type Tab = "diary" | "zitate" | "snippets" | "npcs" | "pcs" | "mood";
+
+const NAME_KEY = "trinidad-diaries:player-name";
+const DEFAULT_NAME = "GAST";
+
+// The player's name lives in this browser only (no login). useSyncExternalStore
+// keeps React in sync with localStorage and renders DEFAULT_NAME on the server,
+// avoiding a hydration mismatch.
+function subscribe(cb: () => void) {
+  window.addEventListener("storage", cb);
+  window.addEventListener("player-name-change", cb);
+  return () => {
+    window.removeEventListener("storage", cb);
+    window.removeEventListener("player-name-change", cb);
+  };
+}
+
+function readName() {
+  return localStorage.getItem(NAME_KEY) || DEFAULT_NAME;
+}
+
+function writeName(value: string) {
+  localStorage.setItem(NAME_KEY, value);
+  window.dispatchEvent(new Event("player-name-change"));
+}
 
 const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -70,6 +96,16 @@ const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function Header({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
+  // Each player picks their own name; it's kept per-browser (no login), so
+  // "Matthias" isn't baked in for everyone at the table.
+  const name = useSyncExternalStore(subscribe, readName, () => DEFAULT_NAME);
+
+  function changeName() {
+    const next = window.prompt("Wie heißt du am Tisch?", name === DEFAULT_NAME ? "" : name);
+    if (next === null) return; // cancelled
+    writeName(next.trim() || DEFAULT_NAME);
+  }
+
   return (
     <header className="site-header">
       <div className="header-top">
@@ -99,9 +135,14 @@ export default function Header({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => vo
         </div>
         <div className="header-right">
           <button className="btn-ghost-pill">SL EINLOGGEN</button>
-          <div className="user-tag">
-            <span style={{ color: "var(--red)" }}>◆</span>&nbsp; MATTHIAS
-          </div>
+          <button
+            type="button"
+            className="user-tag"
+            onClick={changeName}
+            title="Namen ändern"
+          >
+            <span style={{ color: "var(--red)" }}>◆</span>&nbsp; {name.toUpperCase()}
+          </button>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import type { Data } from "./types";
 import { SEED_DATA } from "./seed";
 
 const BLOB_PATHNAME = "trinidad-diaries/db.json";
-const HERO_SEED_URL = "/seed/hero-chaconia.png";
+const HERO_SEED_URL = "/seed/Flower.png";
 
 const hasBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN;
 

@@ -4,7 +4,7 @@ import type { Data } from "./types";
 // own campaign — sessions, quotes, snippets, NPCs, PCs and moodboard are all
 // added through the app. (The hero image is still seeded by lib/store.ts.)
 export const SEED_DATA: Data = {
-  heroImageUrl: null, // filled in by lib/store.ts on first read (public/seed/hero-chaconia.png)
+  heroImageUrl: null, // filled in by lib/store.ts on first read (public/seed/Flower.png)
   sessions: [],
   party: [],
   zitate: [],
