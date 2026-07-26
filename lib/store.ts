@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { Data } from "./types";
 import { SEED_DATA } from "./seed";
+import { backfillNpcLinks } from "./npcs";
 
 const BLOB_PATHNAME = "trinidad-diaries/db.json";
 const HERO_SEED_URL = "/seed/Flower.png";
@@ -69,7 +70,18 @@ async function writeRaw(data: Data): Promise<void> {
 
 export async function getData(): Promise<Data> {
   const existing = await readRaw();
-  if (existing) return existing;
+  if (existing) {
+    // Chronicles written before NSC auto-linking existed still have character
+    // links without an NSC entry — give them one, once.
+    if (backfillNpcLinks(existing)) {
+      try {
+        await writeRaw(existing);
+      } catch {
+        // Not persistable right now — still serve the repaired data.
+      }
+    }
+    return existing;
+  }
   const seeded: Data = { ...SEED_DATA, heroImageUrl: HERO_SEED_URL };
   try {
     await writeRaw(seeded);
@@ -119,6 +131,4 @@ export async function uploadImage(file: File, key: string): Promise<string> {
   return `/uploads/${filename}`;
 }
 
-export function newId(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+export { newId } from "./id";
